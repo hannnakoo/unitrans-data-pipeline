@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: unitrans_user
+      POSTGRES_PASSWORD: unitrans_pass
+      POSTGRES_DB: unitrans_db
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unitrans_user -d unitrans_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - unitrans-network
+
+  airflow:
+    image: apache/airflow:2.9.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://unitrans_user:unitrans_pass@postgres:5432/unitrans_db
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+    entrypoint: >
+      /bin/bash -c "
+        echo 'Waiting for Postgres to be ready...' &&
+        while ! pg_isready -h postgres -U unitrans_user -d unitrans_db; do
+          sleep 2;
+        done &&
+        echo 'Initializing Airflow DB...' &&
+        airflow db init &&
+        echo 'Starting Airflow Webserver and Scheduler...' &&
+        airflow webserver -p 8080 &
+        airflow scheduler
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "airflow db check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - unitrans-network
+  volumes:
+    pg_data:
+      driver: local
+  
+  networks:
+    unitrans-network:
+      driver: bridge
