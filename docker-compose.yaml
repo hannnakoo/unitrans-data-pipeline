@@ -34,11 +34,10 @@ services:
     entrypoint: >
       /bin/bash -c "
         echo 'Waiting for Postgres to be ready...' &&
-        while ! pg_isready -h postgres -U unitrans_user -d unitrans_db; do
-          sleep 2;
-        done &&
+        until ! pg_isready -h postgres -U unitrans_user -d unitrans_db; do sleep 2; done &&
         echo 'Initializing Airflow DB...' &&
         airflow db init &&
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
         echo 'Starting Airflow Webserver and Scheduler...' &&
         airflow webserver -p 8080 &
         airflow scheduler
@@ -51,10 +50,10 @@ services:
       start_period: 20s
     networks:
       - unitrans-network
-  volumes:
-    pg_data:
-      driver: local
+volumes:
+  pg_data:
+    driver: local
   
-  networks:
-    unitrans-network:
-      driver: bridge
+networks:
+  unitrans-network:
+    driver: bridge
