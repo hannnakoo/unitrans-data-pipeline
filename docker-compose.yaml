@@ -19,6 +19,18 @@ services:
       start_period: 5s
     networks:
       - unitrans-network
+  
+  core-tables-init:
+    build: ./initcore
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_USER: unitrans_user
+      DB__PASSWORD: unitrans_pass
+      DB_NAME: unitrans_db
+    command: python init_core_tables.py
 
   airflow:
     image: apache/airflow:2.9.0

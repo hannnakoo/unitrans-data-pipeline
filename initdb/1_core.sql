@@ -1,8 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS core;
 
 CREATE TABLE IF NOT EXISTS core.routes (
-    id VARCHAR(10) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    id VARCHAR(10) PRIMARY KEY
 );
 
 CREATE TABLE IF NOT EXISTS core.stops (
@@ -14,7 +13,7 @@ CREATE TABLE IF NOT EXISTS core.stops (
 );
 
 CREATE TABLE IF NOT EXISTS core.route_stop_times (
-    id SERIAL PRIMARY KEY,
+    PRIMARY KEY (route_id, stop_id, schedule_class, service_class),
     route_id VARCHAR(10) NOT NULL,
     stop_id VARCHAR(25) NOT NULL,
     schedule_class VARCHAR(255) NOT NULL,
