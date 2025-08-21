@@ -208,11 +208,12 @@ class TransitDataInitializer:
         try:
             cursor.execute("TRUNCATE TABLE core.stops CASCADE")
             
-            unique_stops = {}
+            unique_stops = {} # Make sure stop tag is unique
             for stop_tag, title, lat, lon, stop_id in all_stops:
                 if stop_tag not in unique_stops:
-                    logger.info(f"Dropped duplicate stop: ({stop_tag}, {title}, {lat}, {lon}, {stop_id})")
                     unique_stops[stop_tag] = (stop_tag, title, lat, lon, stop_id)
+                else:
+                    logger.warning(f"Dropped duplicate stop: ({stop_tag}, {title}, {lat}, {lon}, {stop_id})")
             
             stops_data = list(unique_stops.values())
             
@@ -246,14 +247,20 @@ class TransitDataInitializer:
         cursor = self.conn.cursor()
         try:
             cursor.execute("TRUNCATE TABLE core.route_stop_times CASCADE")
+
+            unique_sched = set(all_schedule_data)
+            if not unique_sched:
+                logger.warning("No schedule data to insert")
+            if len(unique_sched) != len(all_schedule_data):
+                logger.warning(f"Found {len(all_schedule_data) - len(unique_sched)} duplicate schedule entries, removing duplicates")
+            sched_data = list(unique_sched)
             
             execute_values(
                 cursor,
                 """INSERT INTO core.route_stop_times
                     (route_id, stop_id, schedule_class, service_class, scheduled_time) 
-                    VALUES %s ON CONFLICT (route_id, stop_id, schedule_class, service_class) DO UPDATE SET
-                    scheduled_time = EXCLUDED.scheduled_time""",
-                all_schedule_data,
+                    VALUES %s""",
+                sched_data,
                 template=None,
                 page_size=1000
             )
@@ -284,8 +291,8 @@ class TransitDataInitializer:
             all_stops = []
             all_schedule_data = []
             
-            for i, (route_tag, route_title) in enumerate(routes, 1):
-                logger.info(f"Processing route {i}/{len(routes)}: {route_tag} - {route_title}")
+            for i, route_tag in enumerate(routes, 1):
+                logger.info(f"Processing route {i}/{len(routes)}: {route_tag}")
                 
                 try:
                     route_stops = self.get_stops_for_route(route_tag)
@@ -321,7 +328,6 @@ def main():
     }
     
     initializer = TransitDataInitializer(db_config)
-    print(initializer.get_schedule_for_route("A"))
 
     initializer.initialize_database(max_routes=1)
 

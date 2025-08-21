@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS core.stops (
 );
 
 CREATE TABLE IF NOT EXISTS core.route_stop_times (
-    PRIMARY KEY (route_id, stop_id, schedule_class, service_class),
-    route_id VARCHAR(10) NOT NULL,
+    id SERIAL PRIMARY KEY,
+    route_id VARCHAR(10) NOT NqULL,
     stop_id VARCHAR(25) NOT NULL,
     schedule_class VARCHAR(255) NOT NULL,
     service_class VARCHAR(255) NOT NULL,
