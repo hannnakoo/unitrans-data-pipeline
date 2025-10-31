@@ -138,10 +138,6 @@ class TransitDataInitializer:
             service_class = route_elem.get('serviceClass', 'unknown')
             direction = route_elem.get('direction', 'unknown')
 
-            # if service_class.find('Service') != -1:
-            #     logger.warning(f"Skipping route with service class {service_class} as it is not a valid service route")
-            #     continue
-
             logger.info(f"Processing route variant {route_idx + 1}: tag={route_actual_tag}, "
                        f"scheduleClass={schedule_class}, serviceClass={service_class}, direction={direction}")
             
